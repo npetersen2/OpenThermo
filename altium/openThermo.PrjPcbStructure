@@ -1,0 +1,4 @@
+Record=TopLevelDocument|FileName=Schematic.SchDoc
+Record=SheetSymbol|SourceDocument=Schematic.SchDoc|Designator=U_LED_7_Seg_0|SchDesignator=U_LED_7_Seg_0|FileName=LED_7_Seg.SchDoc|SymbolType=Normal|RawFileName=LED_7_Seg.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
+Record=SheetSymbol|SourceDocument=Schematic.SchDoc|Designator=U_LED_7_Seg_1|SchDesignator=U_LED_7_Seg_1|FileName=LED_7_Seg.SchDoc|SymbolType=Normal|RawFileName=LED_7_Seg.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
+Record=SheetSymbol|SourceDocument=Schematic.SchDoc|Designator=U_LED_7_Seg_2|SchDesignator=U_LED_7_Seg_2|FileName=LED_7_Seg.SchDoc|SymbolType=Normal|RawFileName=LED_7_Seg.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
