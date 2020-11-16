@@ -28,8 +28,10 @@ static bool is_first_time = true;
 
 // True when user is adjusting slider
 static bool is_mode_setting_slider = false;
-static bool is_mode_ui_off = false;
+static bool is_mode_ui_show_heat_on_time = false;
 static uint32_t idle_counter = 0;
+static uint32_t showing_heat_on_counter = 0;
+
 
 static float __read_slider_tempF(void)
 {
@@ -63,31 +65,49 @@ void ui_step(void)
 	bool is_user_touching_device = fabsf(tempF_ref - tempF_ref_prev) >= 0.01f;
 	if (is_user_touching_device) {
 		idle_counter = 0;
+		showing_heat_on_counter = 0;
+
+		// Always default to showing current temp after user touches device
+		is_mode_ui_show_heat_on_time = false;
 	} else {
 		idle_counter++;
+		showing_heat_on_counter++;
+	}
+
+	// Keep idle counter in reasonable bounds (prevent roll over)
+	if (idle_counter > 10000) {
+		idle_counter = 10000;
 	}
 
 	is_mode_setting_slider = idle_counter < 5*100; // 5 seconds
-	is_mode_ui_off = false && idle_counter > 30*100; // 30 seconds
+
+	// Flip screens every 10 sec
+	if (showing_heat_on_counter > 10*100) {
+		showing_heat_on_counter = 0;
+		is_mode_ui_show_heat_on_time = !is_mode_ui_show_heat_on_time;
+	}
 
 	// Handle UI state
 	if (is_mode_setting_slider) {
 		// User is adjusting device!
 		led7seg_set_brightness(5000);
 		led7seg_show_float(tempF_ref);
-	} else if (!is_mode_ui_off) {
-		// Device is just regulating temperature...
-
-		led7seg_set_brightness(1000);
-		led7seg_show_float(latest_tempF);
-
-		// Update control reference
-		controller_set_reference(tempF_ref);
 	} else {
-		// Turn LEDs off
-		led7seg_set_brightness(0);
+		led7seg_set_brightness(1000);
 
-		// Update control reference
+		if (is_mode_ui_show_heat_on_time) {
+			// Show percentage heat on in last hour
+			float percent_heat_on = 100 * controller_get_percent_heat_on_last_hour();
+			led7seg_show_float(percent_heat_on);
+		} else {
+			// Show current temperature
+			led7seg_show_float(latest_tempF);
+		}
+	}
+
+
+	// Only update control reference when user isn't touching device
+	if (!is_mode_setting_slider) {
 		controller_set_reference(tempF_ref);
 	}
 

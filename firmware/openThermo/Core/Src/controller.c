@@ -15,6 +15,9 @@ static float tempF_deadband = 0.5f;
 #define TIME_ON_MINIMUM  (2*60) // [sec]
 #define TIME_OFF_MINIMUM (4*60) // [sec]
 
+static uint32_t heat_on_idx = 0;
+static uint8_t is_heat_on_past_hour[60*60] = { 0 };
+
 static uint32_t time_on_sec = 0;
 static uint32_t time_off_sec = TIME_OFF_MINIMUM; // Initialize to having been off "forever"
 
@@ -38,6 +41,18 @@ void controller_step(void)
 void controller_set_reference(float tempF)
 {
 	tempF_ref = tempF;
+}
+
+float controller_get_percent_heat_on_last_hour(void)
+{
+	float sum = 0;
+	for (int i = 0; i < 60*60; i++) {
+		if (is_heat_on_past_hour[i]) {
+			sum += 1;
+		}
+	}
+
+	return sum / (float)3600;
 }
 
 static void __turn_off_heat(void)
@@ -69,10 +84,23 @@ static void __turn_on_heat(void)
 static void __track_time(void)
 {
 	if (is_heat_on) {
+		// Mark heat is on!
+		is_heat_on_past_hour[heat_on_idx] = 1;
+
+		// Record time
 		time_on_sec++;
 		time_off_sec = 0;
 	} else {
+		// Mark heat is off!
+		is_heat_on_past_hour[heat_on_idx] = 0;
+
+		// Record time
 		time_off_sec++;
 		time_on_sec = 0;
+	}
+
+	heat_on_idx++;
+	if (heat_on_idx >= 60*60) {
+		heat_on_idx = 0;
 	}
 }
