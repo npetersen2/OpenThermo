@@ -181,6 +181,21 @@ void led7seg_show_float(float out)
 			);
 }
 
+void led7seg_show_int(int out)
+{
+    // Parse out each LED display output
+    int hundreds = (int)(out * 0.01);
+    int tens = (int)((out - (hundreds * 100)) * 0.1);
+    int ones = (int)(out - (hundreds * 100) - tens*10);
+
+    // Show on LEDs
+	led7seg_show(
+			'0' + ones, 0,
+			'0' + tens, 0,
+			'0' + hundreds, 0
+			);
+}
+
 void led7seg_show(char out1, bool dp1, char out2, bool dp2, char out3, bool dp3)
 {
 	led7seg_show_raw(

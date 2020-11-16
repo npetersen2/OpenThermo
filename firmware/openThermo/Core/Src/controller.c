@@ -5,6 +5,21 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// Tuning for LPF based on Ts = 1 sec
+//
+// Ts = 1
+// A = exp(-2 * pi * Fb * Ts);
+#define FILTER_A_30min_TC (0.99651542676f)
+inline static float __filter(float filter_gain_A, float input, float *prev_input);
+
+static float heat_on_last_hour_percent_z1 = 0.0f;
+static float heat_on_last_hour_percent = 0.0f;
+
+#define HEAT_ON_LAST_N_SECONDS (30*60) // 30 minutes
+
+static uint32_t heat_on_idx = 0;
+static uint8_t is_heat_on_past_hour[HEAT_ON_LAST_N_SECONDS] = { 0 };
+
 static void __turn_off_heat(void);
 static void __turn_on_heat(void);
 static void __track_time(void);
@@ -14,9 +29,6 @@ static float tempF_deadband = 0.5f;
 
 #define TIME_ON_MINIMUM  (2*60) // [sec]
 #define TIME_OFF_MINIMUM (4*60) // [sec]
-
-static uint32_t heat_on_idx = 0;
-static uint8_t is_heat_on_past_hour[60*60] = { 0 };
 
 static uint32_t time_on_sec = 0;
 static uint32_t time_off_sec = TIME_OFF_MINIMUM; // Initialize to having been off "forever"
@@ -36,6 +48,16 @@ void controller_step(void)
 	if (!is_heat_on && tempF_now < (tempF_ref - tempF_deadband)) {
 		__turn_on_heat();
 	}
+
+	// Update filter for time heat has been on
+	float seconds_on = 0;
+	for (int i = 0; i < HEAT_ON_LAST_N_SECONDS; i++) {
+		if (is_heat_on_past_hour[i]) {
+			seconds_on += 1;
+		}
+	}
+	float percent_on = seconds_on * (double)100 / (float)HEAT_ON_LAST_N_SECONDS;
+	heat_on_last_hour_percent = __filter(FILTER_A_30min_TC, percent_on, &heat_on_last_hour_percent_z1);
 }
 
 void controller_set_reference(float tempF)
@@ -45,14 +67,7 @@ void controller_set_reference(float tempF)
 
 float controller_get_percent_heat_on_last_hour(void)
 {
-	float sum = 0;
-	for (int i = 0; i < 60*60; i++) {
-		if (is_heat_on_past_hour[i]) {
-			sum += 1;
-		}
-	}
-
-	return sum / (float)3600;
+	return heat_on_last_hour_percent;
 }
 
 static void __turn_off_heat(void)
@@ -100,7 +115,14 @@ static void __track_time(void)
 	}
 
 	heat_on_idx++;
-	if (heat_on_idx >= 60*60) {
+	if (heat_on_idx >= HEAT_ON_LAST_N_SECONDS) {
 		heat_on_idx = 0;
 	}
+}
+
+inline static float __filter(float filter_gain_A, float input, float *z1)
+{
+    float output = (input * (1.0f - filter_gain_A)) + *z1;
+    *z1 = output * filter_gain_A;
+    return output;
 }

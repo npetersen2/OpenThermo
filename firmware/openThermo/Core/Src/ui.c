@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <math.h>
 
-//Tuning for LPF based on Ts = 0.01
+// Tuning for LPF based on Ts = 0.01
 #define FILTER_A_01Hz		(0.9937365126247782f)
 #define FILTER_A_05Hz		(0.9690724263048106f)
 #define FILTER_A_1Hz		(0.9391013674242926f)
@@ -62,7 +62,7 @@ void ui_step(void)
 	// Read raw input from slider and filter
 	tempF_ref = __filter(FILTER_A_2Hz, __read_slider_tempF(), &tempF_ref_z1);
 
-	bool is_user_touching_device = fabsf(tempF_ref - tempF_ref_prev) >= 0.01f;
+	bool is_user_touching_device = fabsf(tempF_ref - tempF_ref_prev) >= 0.005f;
 	if (is_user_touching_device) {
 		idle_counter = 0;
 		showing_heat_on_counter = 0;
@@ -97,8 +97,8 @@ void ui_step(void)
 
 		if (is_mode_ui_show_heat_on_time) {
 			// Show percentage heat on in last hour
-			float percent_heat_on = 100 * controller_get_percent_heat_on_last_hour();
-			led7seg_show_float(percent_heat_on);
+			float percent_heat_on = controller_get_percent_heat_on_last_hour();
+			led7seg_show_int(roundf(percent_heat_on));
 		} else {
 			// Show current temperature
 			led7seg_show_float(latest_tempF);

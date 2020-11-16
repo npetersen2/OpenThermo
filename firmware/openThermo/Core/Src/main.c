@@ -2,6 +2,7 @@
 #include "defines.h"
 #include "app.h"
 #include "led7seg.h"
+#include "ui.h"
 #include "drv_adc.h"
 #include "drv_i2c.h"
 #include "drv_spi.h"
