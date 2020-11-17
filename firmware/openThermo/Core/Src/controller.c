@@ -9,16 +9,11 @@
 //
 // Ts = 1
 // A = exp(-2 * pi * Fb * Ts);
-#define FILTER_A_30min_TC (0.99651542676f)
+#define FILTER_A_4hour_TC (0.99956376286f)
 inline static float __filter(float filter_gain_A, float input, float *prev_input);
 
 static float heat_on_last_hour_percent_z1 = 0.0f;
 static float heat_on_last_hour_percent = 0.0f;
-
-#define HEAT_ON_LAST_N_SECONDS (30*60) // 30 minutes
-
-static uint32_t heat_on_idx = 0;
-static uint8_t is_heat_on_past_hour[HEAT_ON_LAST_N_SECONDS] = { 0 };
 
 static void __turn_off_heat(void);
 static void __turn_on_heat(void);
@@ -50,14 +45,11 @@ void controller_step(void)
 	}
 
 	// Update filter for time heat has been on
-	float seconds_on = 0;
-	for (int i = 0; i < HEAT_ON_LAST_N_SECONDS; i++) {
-		if (is_heat_on_past_hour[i]) {
-			seconds_on += 1;
-		}
+	float on_percent = 0.0f;
+	if (is_heat_on) {
+		on_percent = 100.0f;
 	}
-	float percent_on = seconds_on * (double)100 / (float)HEAT_ON_LAST_N_SECONDS;
-	heat_on_last_hour_percent = __filter(FILTER_A_30min_TC, percent_on, &heat_on_last_hour_percent_z1);
+	heat_on_last_hour_percent = __filter(FILTER_A_4hour_TC, on_percent, &heat_on_last_hour_percent_z1);
 }
 
 void controller_set_reference(float tempF)
@@ -99,24 +91,13 @@ static void __turn_on_heat(void)
 static void __track_time(void)
 {
 	if (is_heat_on) {
-		// Mark heat is on!
-		is_heat_on_past_hour[heat_on_idx] = 1;
-
 		// Record time
 		time_on_sec++;
 		time_off_sec = 0;
 	} else {
-		// Mark heat is off!
-		is_heat_on_past_hour[heat_on_idx] = 0;
-
 		// Record time
 		time_off_sec++;
 		time_on_sec = 0;
-	}
-
-	heat_on_idx++;
-	if (heat_on_idx >= HEAT_ON_LAST_N_SECONDS) {
-		heat_on_idx = 0;
 	}
 }
 
